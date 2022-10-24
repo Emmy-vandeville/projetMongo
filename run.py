@@ -1,4 +1,3 @@
-
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 import requests
@@ -6,8 +5,8 @@ import json
 import dateutil.parser
 import time
 
-
-client = MongoClient("mongodb+srv://user:password@yyyyyyyyyy.xxxxxxxxx.mongodb.net/?retryWrites=true&w=majority", server_api=ServerApi('1'))
+client = MongoClient("mongodb+srv://root:root@projetvelo.iurqcoj.mongodb.net/?retryWrites=true&w=majority",
+                     server_api=ServerApi('1'))
 
 db = client.vls
 
@@ -36,12 +35,10 @@ vlilles_to_insert = [
     for elem in vlilles
 ]
 
-try: 
+try:
     db.stations.insert_many(vlilles_to_insert, ordered=False)
 except:
     pass
-
-
 
 while True:
     print('update')
@@ -55,8 +52,8 @@ while True:
         }
         for elem in vlilles
     ]
-    
+
     for data in datas:
-        db.datas.update_one({'date': data["date"], "station_id": data["station_id"]}, { "$set": data }, upsert=True)
+        db.datas.update_one({'date': data["date"], "station_id": data["station_id"]}, {"$set": data}, upsert=True)
 
     time.sleep(10)
