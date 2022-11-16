@@ -1,7 +1,7 @@
 import re
+import requests
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
-import requests
 import json
 import dateutil.parser
 import time
@@ -103,7 +103,7 @@ def exo3():
                 '$nearSphere': {
                    '$geometry': {
                       'type': "Point",
-                      'coordinates': [latitude, longitude]
+                      'coordinates': [longitude, latitude]
                    },
                    '$maxDistance': maximum,
                    '$minDistance': 0
@@ -114,9 +114,11 @@ def exo3():
         if len(list(near.clone())) != 0:
             for x in near:
                 print('nom de la station : ', x.get('name'), ', nombre de velos dispo : ', x.get('velosdispos'), ', nombre de places libre : ', x.get('placeslibres'))
+            return near
             test = False
         else:
-            print("Il n'y a pas de station à moins de", round(maximum), 'mètres de vous')
+            # print("Il n'y a pas de station à moins de", round(maximum), 'mètres de vous')
+            print("Il n'y a pas de station dans cette zone")
 
 
 exo1()
@@ -146,6 +148,35 @@ def delete(station):
     db.stations.delete_one(station)
     print('delete')
 
+def stationRatioUnder20PctBtw18h19h():
+    stations = []
+    velosdispos = db.datas.aggregate([{"$match": {"$expr": {"$and":[{"$eq": [{"$hour": "$date"}, 7]},
+                                        {"$not": {"$eq": [{"$dayOfWeek": "$date"}, 1]}},
+                                        {"$not": {"$eq": [{"$dayOfWeek": "$date"}, 7]}}]}}},
+                                        {"$group": {"_id": "$station_id", "bike_availbale": {"$avg": "$bike_availbale"}}}])
+    size = db.stations.aggregate([{"$group": {"_id": "$_id", "size": {"$avg": "$size"}}}])
+
+    velosdispos = list(velosdispos)
+    size = list(size)
+    # print(velosdispos)
+    # print("\n")
+    # print(size)
+    for v in velosdispos:
+        for i in size:
+            if i["_id"] == v["_id"] and v["bike_availbale"] / i["size"] < 0.2:
+                stations.append(i["_id"])
+    return stations
+
+def stationRatioUnder20():
+    stations = db.datas.find({})
+    liste = []
+    stations = list(stations)
+    for s in stations:
+        if (s['bike_availbale']!=0 & s['stand_availbale']==0) | (s['bike_availbale']==0 & s['stand_availbale']!=0):
+            if (s['bike_availbale']/(s['bike_availbale']+s['stand_availbale'])) < 0.2 :
+                liste.append(s)
+    return liste
+
 db.stations.create_index([('name', "text")])
 # RECHERCHER UNE STATION
 test = True
@@ -155,15 +186,16 @@ while test:
                            '(1:chercher une station,\n '
                            '2:update une station, \n '
                            '3:delete une station, \n '
-                           '4: deactivate all sations in a area, \n '
-                           '5: give all stations with a ratio bike/total_stand under 20% between 18h and 19h00 (monday to friday)) : '))
+                           '4:deactivate all stations in a area, \n '
+                           '5:give all stations with a ratio bike/total_stand under 20% \n' #  between 18h and 19h00 (monday to friday))
+                           ':'))
         if (option in [1,2,3,4,5]):
             test = False
     except :
         pass
 
 if option == 1:
-    search_station = input('Quelle(s) sation(s) cherchez-vous ? : ')
+    search_station = input('Quelle(s) station(s) cherchez-vous ? : ')
     station = db.stations.find({"name": re.compile(search_station, re.IGNORECASE)})
     liste_station = []
     for i in station:
@@ -181,12 +213,12 @@ elif option == 2:
     for i in station:
         liste_station.append(i)
     if (len(liste_station) == 1):
-        print('la station a modifier est : ', liste_station[0]['name'])
+        print('la station à modifier est : ', liste_station[0]['name'])
         update(liste_station[0])
     elif (len(liste_station) ==0):
         print('Pas de station trouvée')
     else:
-        print('Choississez une station parmis les ' , len(liste_station), 'stations')
+        print('Choisissez une station parmi les ' , len(liste_station), 'stations')
         a = []
         for i in range (len(liste_station)):
             a.append(i)
@@ -206,18 +238,18 @@ elif option == 2:
         update(station_choisie)
 
 elif option == 3:
-    search_station = input('Quelle station voulez-vous suprimer ? : ')
+    search_station = input('Quelle station voulez-vous supprimer ? : ')
     station = db.stations.find({"name": re.compile(search_station, re.IGNORECASE)})
     liste_station = []
     for i in station:
         liste_station.append(i)
     if (len(liste_station) == 1):
-        print('la station a supprimer est : ', liste_station[0]['name'])
+        print('la station à supprimer est : ', liste_station[0]['name'])
         delete(liste_station[0])
     elif (len(liste_station) == 0):
         print('Pas de station trouvée')
     else:
-        print('Choississez une station parmis les ', len(liste_station), 'stations')
+        print('Choisissez une station parmi les ', len(liste_station), 'stations')
         a = []
         for i in range(len(liste_station)):
             a.append(i)
@@ -233,5 +265,22 @@ elif option == 3:
                     test = False
             except:
                 pass
-        print('la station a supprimer est : ', station_choisie['name'])
+        print('la station à supprimer est : ', station_choisie['name'])
         delete(station_choisie)
+
+elif option == 4:
+    print('Définissez la zone dans laquelle déactiver les stations')
+    result = exo3()
+    print(f'entrer 1 pour activer les stations de la zone et 2 pour les désactiver:')
+    value = input()
+    if value == "1":
+        value = True
+    else:
+        value = False
+    for x in result:
+        x.tpe = value
+
+elif option == 5:
+    result = stationRatioUnder20()
+    for i in result:
+        print(i)
