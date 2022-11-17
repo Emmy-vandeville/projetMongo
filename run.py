@@ -121,7 +121,7 @@ def exo3():
             print("Il n'y a pas de station dans cette zone")
 
 
-exo1()
+
 #Exo 4
 def update(station_choisie):
     a = []
@@ -177,110 +177,112 @@ def stationRatioUnder20():
                 liste.append(s)
     return liste
 
-db.stations.create_index([('name', "text")])
-# RECHERCHER UNE STATION
-test = True
-while test:
-    try:
-        option = int(input('Que voulez-vous faire ? \n'
-                           '(1:chercher une station,\n '
-                           '2:update une station, \n '
-                           '3:delete une station, \n '
-                           '4:deactivate all stations in a area, \n '
-                           '5:give all stations with a ratio bike/total_stand under 20% \n' #  between 18h and 19h00 (monday to friday))
-                           ':'))
-        if (option in [1,2,3,4,5]):
-            test = False
-    except :
-        pass
 
-if option == 1:
-    search_station = input('Quelle(s) station(s) cherchez-vous ? : ')
-    station = db.stations.find({"name": re.compile(search_station, re.IGNORECASE)})
-    liste_station = []
-    for i in station:
-        liste_station.append(i)
-    if (len(liste_station)==0):
-        print('pas de station trouvée')
-    else:
-        for i in liste_station :
+def exo4 ():
+    db.stations.create_index([('name', "text")])
+    # RECHERCHER UNE STATION
+    test = True
+    while test:
+        try:
+            option = int(input('Que voulez-vous faire ? \n'
+                               '(1:chercher une station,\n '
+                               '2:update une station, \n '
+                               '3:delete une station, \n '
+                               '4:deactivate all stations in a area, \n '
+                               '5:give all stations with a ratio bike/total_stand under 20% \n' #  between 18h and 19h00 (monday to friday))
+                               ':'))
+            if (option in [1,2,3,4,5]):
+                test = False
+        except :
+            pass
+
+    if option == 1:
+        search_station = input('Quelle(s) station(s) cherchez-vous ? : ')
+        station = db.stations.find({"name": re.compile(search_station, re.IGNORECASE)})
+        liste_station = []
+        for i in station:
+            liste_station.append(i)
+        if (len(liste_station)==0):
+            print('pas de station trouvée')
+        else:
+            for i in liste_station :
+                print(i)
+
+    elif option == 2:
+        search_station = input('Quelle station voulez-vous mettre à jour ? : ')
+        station = db.stations.find({"name": re.compile(search_station, re.IGNORECASE)})
+        liste_station = []
+        for i in station:
+            liste_station.append(i)
+        if (len(liste_station) == 1):
+            print('la station à modifier est : ', liste_station[0]['name'])
+            update(liste_station[0])
+        elif (len(liste_station) ==0):
+            print('Pas de station trouvée')
+        else:
+            print('Choisissez une station parmi les ' , len(liste_station), 'stations')
+            a = []
+            for i in range (len(liste_station)):
+                a.append(i)
+            for i in liste_station :
+                print(i['name'])
+            test = True
+            while test:
+                try:
+                    print('Quelle station parmi les station précédentes ? ( 0 -',len(liste_station)-1, ') : ')
+                    choix = int(input())
+                    if (choix in a):
+                        station_choisie = liste_station[choix]
+                        test = False
+                except:
+                    pass
+            print('la station a modifier est : ', station_choisie['name'])
+            update(station_choisie)
+
+    elif option == 3:
+        search_station = input('Quelle station voulez-vous supprimer ? : ')
+        station = db.stations.find({"name": re.compile(search_station, re.IGNORECASE)})
+        liste_station = []
+        for i in station:
+            liste_station.append(i)
+        if (len(liste_station) == 1):
+            print('la station à supprimer est : ', liste_station[0]['name'])
+            delete(liste_station[0])
+        elif (len(liste_station) == 0):
+            print('Pas de station trouvée')
+        else:
+            print('Choisissez une station parmi les ', len(liste_station), 'stations')
+            a = []
+            for i in range(len(liste_station)):
+                a.append(i)
+            for i in liste_station:
+                print(i['name'])
+            test = True
+            while test:
+                try:
+                    print('Quelle station parmi les station précédentes ? ( 0 -', len(liste_station) - 1, ') : ')
+                    choix = int(input())
+                    if (choix in a):
+                        station_choisie = liste_station[choix]
+                        test = False
+                except:
+                    pass
+            print('la station à supprimer est : ', station_choisie['name'])
+            delete(station_choisie)
+
+    elif option == 4:
+        print('Définissez la zone dans laquelle déactiver les stations')
+        result = exo3()
+        print(f'entrer 1 pour activer les stations de la zone et 2 pour les désactiver:')
+        value = input()
+        if value == "1":
+            value = True
+        else:
+            value = False
+        for x in result:
+            x.tpe = value
+
+    elif option == 5:
+        result = stationRatioUnder20()
+        for i in result:
             print(i)
-
-elif option == 2:
-    search_station = input('Quelle station voulez-vous mettre à jour ? : ')
-    station = db.stations.find({"name": re.compile(search_station, re.IGNORECASE)})
-    liste_station = []
-    for i in station:
-        liste_station.append(i)
-    if (len(liste_station) == 1):
-        print('la station à modifier est : ', liste_station[0]['name'])
-        update(liste_station[0])
-    elif (len(liste_station) ==0):
-        print('Pas de station trouvée')
-    else:
-        print('Choisissez une station parmi les ' , len(liste_station), 'stations')
-        a = []
-        for i in range (len(liste_station)):
-            a.append(i)
-        for i in liste_station :
-            print(i['name'])
-        test = True
-        while test:
-            try:
-                print('Quelle station parmi les station précédentes ? ( 0 -',len(liste_station)-1, ') : ')
-                choix = int(input())
-                if (choix in a):
-                    station_choisie = liste_station[choix]
-                    test = False
-            except:
-                pass
-        print('la station a modifier est : ', station_choisie['name'])
-        update(station_choisie)
-
-elif option == 3:
-    search_station = input('Quelle station voulez-vous supprimer ? : ')
-    station = db.stations.find({"name": re.compile(search_station, re.IGNORECASE)})
-    liste_station = []
-    for i in station:
-        liste_station.append(i)
-    if (len(liste_station) == 1):
-        print('la station à supprimer est : ', liste_station[0]['name'])
-        delete(liste_station[0])
-    elif (len(liste_station) == 0):
-        print('Pas de station trouvée')
-    else:
-        print('Choisissez une station parmi les ', len(liste_station), 'stations')
-        a = []
-        for i in range(len(liste_station)):
-            a.append(i)
-        for i in liste_station:
-            print(i['name'])
-        test = True
-        while test:
-            try:
-                print('Quelle station parmi les station précédentes ? ( 0 -', len(liste_station) - 1, ') : ')
-                choix = int(input())
-                if (choix in a):
-                    station_choisie = liste_station[choix]
-                    test = False
-            except:
-                pass
-        print('la station à supprimer est : ', station_choisie['name'])
-        delete(station_choisie)
-
-elif option == 4:
-    print('Définissez la zone dans laquelle déactiver les stations')
-    result = exo3()
-    print(f'entrer 1 pour activer les stations de la zone et 2 pour les désactiver:')
-    value = input()
-    if value == "1":
-        value = True
-    else:
-        value = False
-    for x in result:
-        x.tpe = value
-
-elif option == 5:
-    result = stationRatioUnder20()
-    for i in result:
-        print(i)
